@@ -1,0 +1,144 @@
+DES IMPLEMENTATION CODE REVIEW & PROPOSED CHANGES
+=====================================================
+
+1. CRITICAL BUGS SUMMARY
+------------------------
+1. Broken Feistel Network:
+   The round function in feistel.cpp discards the original left half (L_old) entirely and never computes L_old ^ f(R_old, K). A Feistel cipher requires L_next = R_prev and R_next = L_prev ^ f(R_prev, K). In the current code, the upper 32 bits (L) are never read or XORed, making encryption non-invertible and irreversible.
+
+2. Infinite Loop and Out-of-Bounds Access in Decryption:
+   In main.cpp: Dec(), the loop starts at R - 1 and uses 'i++' with condition 'i >= 0'. This causes an infinite loop and immediate out-of-bounds access when 'i >= R' on k1[i].
+
+3. Inverted Decryption Logic:
+   In main.cpp: Dec(), the code checks 'if (i == 0)' for reading input ciphertext c->head. However, decryption starts at round R - 1, meaning on the first iteration (i = R - 1 != 0), it reads from an uninitialized dummy Node 'm->head'.
+
+4. Buffer Underallocation / Heap Corruption:
+   In main.cpp: main(), '(Msg*)malloc(sizeof(m))' allocates sizeof(Msg*) (8 bytes on 64-bit systems) instead of sizeof(Msg) (16 bytes). Writing to m->pad causes heap corruption.
+
+5. Round Keys Are All Identical:
+   In Key_derv.cpp: permtwo(), local variables c1 and d1 are shifted, but candd is created from unshifted c.key and d.key. Furthermore, round_keys() does not accumulate shifts across rounds (in DES, shifts are cumulative). Consequently, all 16 subkeys generated are completely identical.
+
+6. DES Rounds Count:
+   main.hpp defines ROUNDS as 10. The standard DES algorithm specifies strictly 16 rounds.
+
+7. Missing Initial & Final Permutations (IP and FP):
+   In des_table.hpp, IP and FP tables are defined, but they are never applied anywhere in encryption or decryption.
+
+8. Massive Memory Leaks:
+   On every round of Enc() and Dec(), a new Cip/Msg structure and linked list chain are allocated by RnEnc/RnDec, while the previous round's structures and nodes are orphaned without being freed.
+
+
+2. FILE-BY-FILE BREAKDOWN OF ISSUES
+-----------------------------------
+
+A. main.hpp
+-----------
+- Broken Header Guard:
+  Line 1 has '#ifndef MAIN_HPP', but is missing '#define MAIN_HPP'. It fails to protect against multiple inclusions.
+- Namespace Pollution:
+  'using namespace std;' in a header file pollutes the global namespace of any file that includes it.
+- Incorrect Round Count:
+  '#define ROUNDS 10' should be 16. Prefer 'constexpr int ROUNDS = 16;'.
+- C-Style Typedefs:
+  'typedef struct ListNode { ... } Node;' is redundant in C++. Use 'struct Node { ... };'.
+- Duplicate Structs:
+  'Msg' and 'Cip' are identical structs.
+- Non-Const Reference Signatures:
+  Functions like nLeft(Node*& n), Sub(size_t& D), ExpPerm(Node*& N) take non-const references even though they only read the data. This blocks rvalues and temporaries.
+- Architecture-Dependent Types:
+  Using 'size_t' for 48/64-bit cryptographic operations will truncate to 32 bits on 32-bit systems. Use 'uint64_t'.
+
+B. main.cpp
+-----------
+- Key Generation:
+  Gen() masks with 0xFFFFFFFFFFFFFF (56 bits). Standard DES keys are 64 bits (56 key bits + 8 parity bits). PC-1 indexes bit positions 1 to 64; placing 56 bits in bits 0..55 causes bits 56..63 to be 0, corrupting PC-1 output.
+- PRNG vs CSPRNG:
+  mt19937_64 is a pseudo-random generator, not suitable for secure cryptographic key generation.
+- Memory Leaks in Enc() and Dec():
+  Allocates temporary Cip/Msg and Node pointers that get overwritten on the first round and leaked on subsequent rounds.
+- Infinite Loop in Dec():
+  'for(int i = R - 1; i >= 0; i++)' increments instead of decrements.
+- String Conversion / Padding:
+  str_to_node() does not implement a standardized padding algorithm (e.g. PKCS#7). Trailing bytes are zero-padded with no indicator of padding length.
+  node_to_str() always dumps 8 bytes per block, including null padding bytes.
+- Input Handling:
+  'cin >> s;' only reads single words. Should use 'std::getline(cin, s)'.
+- Memory Allocation Bug in main():
+  'malloc(sizeof(m))' allocates 8 bytes instead of 16 bytes. Mixing malloc with new/delete.
+
+C. feistel.cpp
+--------------
+- Inverted Halves Extraction:
+  'nLeft' uses '(uint32_t)n->ctx & 0xFFFFFFFFULL', extracting the LOW 32 bits (Right half in big-endian), not the Left half. Left half is '(n->ctx >> 32) & 0xFFFFFFFFULL'.
+- Discarded Left Half / Missing Feistel XOR:
+  In RnEnc(), nlft (lower 32 bits) and nrgt (f-box output) are packed as '(nlft << 32) + nrgt'. The original upper 32 bits (L_old) are never used or XORed.
+- Stray Backslash:
+  Line 8 has a stray backslash: 'Cip* RnEnc(Node* n, Key& k){ \'
+- RnDec() is Identical to RnEnc():
+  Decryption does not invert the Feistel rounds.
+- 32-bit Shift Overflow:
+  In RnKey(), '(c << 28)' performs a 32-bit shift on uint32_t 'c', truncating bits 4..31 before promotion to uint64_t.
+- Dead Code:
+  RnKey() is defined but never called.
+
+D. blockfn.cpp
+--------------
+- Tight Coupling:
+  ExpPerm() and nRight() take 'Node*&' instead of operating on raw 32-bit integers.
+- Misleading Function Name:
+  nRight() does not extract the right half; it executes the entire Feistel round function f(R, K).
+- S-Box Comment Error:
+  Comment states S-boxes convert 48 bits to 64; S-boxes convert 48 bits to 32 bits (8 * 4 bits).
+- Parameter Types:
+  Functions take 'size_t&' instead of 'uint64_t' or 'uint32_t'.
+
+E. Key_derv.cpp
+---------------
+- Shift Bit Overflow:
+  In shift(), 'k = k << 1; k += (x >> 27);' does not mask with 0x0FFFFFFF. Bit 27 shifts to bit 28 and stays set.
+- Shifted Halves Ignored:
+  In permtwo(), c1 and d1 are shifted, but candd is constructed using unshifted 'c.key' and 'd.key'.
+- Cumulative Shifts Missing:
+  round_keys() does not accumulate shifts across rounds; it re-uses the original C0, D0 each time.
+- Unnecessary Vector Overhead:
+  permone() returns a heap-allocated std::vector for 2 fixed halves instead of std::pair or a small struct.
+- Dead Code:
+  Derv() is never declared in main.hpp or called.
+
+F. des_table.hpp
+----------------
+- Unused Tables:
+  IP and FP tables are defined but never used in the algorithm.
+- Linkage:
+  'const uint8_t' arrays in a header have internal linkage. In C++17, use 'inline constexpr uint8_t' to avoid duplicate copies per translation unit.
+
+
+3. DES SPECIFICATION CONFORMANCE MATRIX
+---------------------------------------
+Standard DES Requirement        | Current Implementation        | Conformance
+--------------------------------|-------------------------------|------------
+16 Rounds                       | 10 Rounds                     | FAIL
+Initial Permutation (IP)        | Defined, never called         | FAIL
+Final Permutation (FP)          | Defined, never called         | FAIL
+Feistel Equation: R = L ^ f(R,K)| R = f(R,K); L is discarded    | FAIL
+Final 32-bit Half Swap          | Not implemented               | FAIL
+Decryption (Inverted Subkeys)   | Identical to Enc + loop bug   | FAIL
+Cumulative Key Shifts           | Independent / ignored shifts  | FAIL
+64-bit Key with Parity Bits     | 56-bit Key masked into low 56 | FAIL
+
+
+4. CODING STYLE & ARCHITECTURAL RECOMMENDATIONS
+-----------------------------------------------
+1. Replace Linked Lists for Block Storage:
+   Using a singly linked list for 8-byte blocks causes 100% pointer overhead, heap fragmentation, and manual memory management risks. Use 'std::vector<uint64_t>' or 'std::vector<uint8_t>'.
+2. Adopt RAII and Modern C++ Memory Management:
+   Avoid raw 'new', 'delete', 'malloc', and 'free'. Use standard containers or smart pointers (std::unique_ptr).
+3. Layered Design:
+   Separate:
+   - Core block cipher: uint64_t des_encrypt_block(uint64_t block, const std::array<uint64_t, 16>& subkeys);
+   - Key schedule: std::array<uint64_t, 16> generate_subkeys(uint64_t key);
+   - Mode & Padding: ECB/CBC with PKCS#7 padding on std::vector<uint8_t>.
+4. Type Safety and Passing Conventions:
+   Pass primitives (uint32_t, uint64_t) by value. Pass large objects by 'const &'.
+5. Meaningful Naming:
+   Use self-documenting names (e.g. feistel_round_function instead of nRight; apply_pc1 instead of permone).
