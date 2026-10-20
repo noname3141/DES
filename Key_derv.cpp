@@ -28,9 +28,7 @@ std::pair<uint32_t, uint32_t> permone(Key k){ //produces c and d for the first r
     return a;
 }
 
-Key permtwo(std::pair<uint32_t, uint32_t>& a, int r_no){
-    shift(a.first, r_no);
-    shift(a.second, r_no);
+Key permtwo(std::pair<uint32_t, uint32_t>& a){
     //32-bit shift overflow: '(c.key << 28)' must be 64-bit safe: '((uint64_t)c1 << 28) | d1'.
     uint64_t candd = ((uint64_t)a.first << 28) | a.second;
     uint64_t p1 = 0;
@@ -45,21 +43,13 @@ Key permtwo(std::pair<uint32_t, uint32_t>& a, int r_no){
     return x;
 }
 
-// IMPROVEMENT: Derv is dead code; it is never declared in main.hpp or called.
-Key Derv(Key k, int r_no){
-    std::vector<Key> a = permone(k);
-    Key rkey = permtwo(a, r_no);
-    return rkey;
-}
-
-std::vector<Key> round_keys(Key k, int r_no){
+std::vector<Key> round_keys(Key k, int rs){
     std::vector<Key> r_keys;
     std::pair<uint32_t, uint32_t> cd = permone(k);
-    for(int i = 0; i < r_no; i++){
-        // CRITICAL BUG: In standard DES, key shifts are CUMULATIVE across rounds.
-        // Here, 'cd' is passed unmutated into permtwo on every iteration.
-        // Because of this and the bug in permtwo, ALL ROUND KEYS ARE IDENTICAL!
-        Key k1 = permtwo(cd, i);
+    for(int i = 0; i < rs; i++){
+        shift(cd.first, i);
+        shift(cd.second, i);
+        Key k1 = permtwo(cd);
         r_keys.push_back(k1);
     }
     return r_keys;
