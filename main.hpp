@@ -10,8 +10,6 @@
 #include <unistd.h>
 #include <iomanip>
 
-// IMPROVEMENT: Singly-linked list causes 100% pointer overhead (8 bytes data + 8 bytes pointer)
-// and heap fragmentation. Prefer std::vector<uint64_t> or std::vector<uint8_t>.
 typedef struct ListNode{
     uint64_t ctx;
     ListNode* nx;
@@ -28,9 +26,9 @@ typedef struct{
 } Info;
 
 //feistel
-Info* rnEnc(Node* N, Key& k);
-Info* rnDec(Node* N, Key& k);
-uint32_t nLeft(const Node*& n);
+void rnEnc(Node* N, Info* c, Key& k, int r_no);
+void rnDec(Node* N, Info* m, Key& k, int r_no);
+uint32_t nLeft(const uint64_t n);
 
 //blockfn
 uint32_t feistel_f(uint32_t ctx, Key& k);
@@ -48,6 +46,8 @@ std::vector<Key> round_keys(Key k, int r_no);
 #define ROUNDS 16
 bool generate_secure_bytes(unsigned char* buffer, size_t buffer_size);
 Key gen();
+Node* str_to_node(const std::string& s);
+std::string node_to_str(Node* head);
 Info* enc(Info*& m, Key& k, int R = ROUNDS);
 Info* dec(Info*& c, Key& k, int R = ROUNDS);
 

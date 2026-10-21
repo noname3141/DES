@@ -32,40 +32,33 @@ Key gen(){
 }
 
 Info* enc(Info*& m, Key& k, int R){
-    // MEMORY LEAK: 'c' and 'n' allocated here are immediately overwritten in loop iteration 0.
     if(!m || R <= 0)return nullptr;
-    Info* c;
+    Info* c = new Info{nullptr, false};
+    Node* n = new Node{0, nullptr};
+    c->head = n;
     std::vector<Key> k1 = round_keys(k, R);
     for(int i = 0; i < R; i++){
         if(i == 0){
-            // MEMORY LEAK: Overwrites 'c' with the new allocation from RnEnc, leaking the initial 'c' and 'n'.
-            c = rnEnc(m->head, k1[i]);
+            rnEnc(m->head, c, k1[i], i + 1);
         }
         else{
-            // MEMORY LEAK: RnEnc allocates a whole new Cip and Node list each round.
-            // The previous round's 'c' and all its nodes are leaked on every iteration.
-            c = rnEnc(c->head, k1[i]);
+            rnEnc(c->head, c, k1[i], i + 1);
         }
     }
     return c;
 }
 
 Info* dec(Info*& c, Key& k, int R){
-    Info* m = new (Info);
-    Node* n = new(Node);
+    Info* m = new Info{nullptr, false};
+    Node* n = new Node{0, nullptr};
     m->head = n;
-    m->pad = c->pad;
     std::vector<Key> k1 = round_keys(k, R);
-    // CRITICAL BUG 1: 'i++' instead of 'i--'! Starts at (R - 1) and checks (i >= 0),
-    // causing an INFINITE LOOP and eventual out-of-bounds access on k1[i] when i >= R!
-    for(int i = R - 1; i >= 0; i++){
-        // CRITICAL BUG 2: In decryption, the first round is (R - 1), NOT 0.
-        // On iteration 0 (i = R - 1), it takes the 'else' branch, passing uninitialized dummy 'm->head'.
-        if(i == 0){
-            m = rnDec(c->head, k1[i]);
+    for(int i = R - 1; i >= 0; i--){
+        if(i == R - 1){
+            rnDec(c->head, m, k1[i], 1);
         }
         else{
-            m = rnDec(m->head, k1[i]);
+            rnDec(m->head, m, k1[i], 2);
         }
     }
     return m;
@@ -121,22 +114,16 @@ int main(){
     // STYLE: Mixing C printf with C++ streams. Prefer std::cout.
     printf("%" PRIu64 "\n", k.key);
     std::string s;
-    // IMPROVEMENT: 'cin >> s' stops at whitespace. Use 'std::getline(cin, s)' to read entire lines.
     std::cin >> s;
     Node* m1 = str_to_node(s);
-    // CRITICAL BUG: 'sizeof(m)' is sizeof(Msg*) = 8 bytes, but sizeof(Msg) is 16 bytes!
-    // This under-allocates memory and causes heap corruption when accessing m->pad.
-    // STYLE: Avoid 'malloc' in C++; use 'new Msg;' or value semantics.
-    Info* m = (Info*)malloc(sizeof(m));
-    m->head = m1;
-    // ERROR: m->pad is uninitialized!
+    Info* m = new Info{m1, false};
     Info* c = enc(m, k);
     std::string c1 = node_to_str(c->head);
     std::cout << c1;
 
     Info* m2 = dec(c, k);
     std::string m3 = node_to_str(m2->head);
-    std::cout << m3;
+    std::cout << "\n"<< m3;
     // MEMORY LEAK: 'm', 'c', and all allocated nodes are never freed before program exit.
     //pretty printer + ways to make my msg and cipher from str to node and node to str;
     return 0;
