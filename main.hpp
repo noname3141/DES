@@ -1,11 +1,13 @@
 #ifndef MAIN_HPP
 #define MAIN_HPP
 #include <iostream>
+#include <sstream>
 #include <fstream>
 #include <vector>
 #include <cstdlib>
 #include <cinttypes>
 #include <cstdint>
+#include <cstring>
 #include <random>
 #include <unistd.h>
 #include <iomanip>
@@ -42,9 +44,10 @@ std::vector<Key> round_keys(Key k, int r_no);
 //main
 #define ROUNDS 16
 bool generate_secure_bytes(unsigned char* buffer, size_t buffer_size);
-Key gen();
+Key gen(bool k);
 std::vector<uint64_t> str_to_vec(const std::string& s);
 std::string vec_to_str(const std::vector<uint64_t>& v);
+std::string uint64ToHex(const std::vector<unsigned char>& v);
 Info* enc(const Info* m, Key& k, int R = ROUNDS);
 Info* dec(const Info* c, Key& k, int R = ROUNDS);
 
