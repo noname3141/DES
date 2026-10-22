@@ -1,6 +1,10 @@
 #include "main.hpp"
 #include "des_table.hpp"
 
+uint64_t xor_round_key(uint64_t b, Key k){
+    return (b & 0x0000FFFFFFFFFFFFULL) ^ (k.key & 0x0000FFFFFFFFFFFFULL);
+}
+
 uint64_t expPerm(uint32_t ctx){
     uint64_t res = 0;
     for(int i = 0; i < 48; i++){
@@ -9,10 +13,6 @@ uint64_t expPerm(uint32_t ctx){
         res = (res << 1) | b;
     }
     return res;
-}
-
-uint64_t xor_round_key(uint64_t b, Key k){
-    return (b & 0x0000FFFFFFFFFFFFULL) ^ (k.key & 0x0000FFFFFFFFFFFFULL);
 }
 
 uint32_t sub(uint64_t D){

@@ -31,76 +31,52 @@ Key gen(){
     return k;
 }
 
-Info* enc(Info*& m, Key& k, int R){
+Info* enc(const Info* m, Key& k, int R){
     if(!m || R <= 0)return nullptr;
-    Info* c = new Info{nullptr, false};
-    Node* n = new Node{0, nullptr};
-    c->head = n;
+    std::vector<uint64_t> v;
+    Info* c = new Info{v, false};
     std::vector<Key> k1 = round_keys(k, R);
     for(int i = 0; i < R; i++){
-        if(i == 0){
-            rnEnc(m->head, c, k1[i], i + 1);
-        }
-        else{
-            rnEnc(c->head, c, k1[i], i + 1);
-        }
+        rnEnc(m->ctx, c, k1[i], i + 1);
     }
     return c;
 }
 
-Info* dec(Info*& c, Key& k, int R){
-    Info* m = new Info{nullptr, false};
-    Node* n = new Node{0, nullptr};
-    m->head = n;
+Info* dec(const Info* c, Key& k, int R){
+    if(!c || R <= 0)return nullptr;
+    std::vector<uint64_t> v;
+    Info* m = new Info{v, false};
     std::vector<Key> k1 = round_keys(k, R);
     for(int i = R - 1; i >= 0; i--){
-        if(i == R - 1){
-            rnDec(c->head, m, k1[i], 1);
-        }
-        else{
-            rnDec(m->head, m, k1[i], 2);
-        }
+        rnDec(c->ctx, m, k1[i], R - i);
     }
     return m;
 }
 
-Node* str_to_node(const std::string& s) {
-    Node* head = nullptr;
-    Node* tail = nullptr;
+std::vector<uint64_t> str_to_vec(const std::string& s) {
+    std::vector<uint64_t> vec;
+    if (s.empty()) return vec;
 
-    if(s.size() == 0) return nullptr;
     for (size_t i = 0; i < s.size(); i += 8) {
         uint64_t block = 0;
-
         size_t remaining = std::min<size_t>(8, s.size() - i);
 
-        // IMPROVEMENT: No standard padding (e.g. PKCS#7). Trailing bytes are simply 0,
-        // making it impossible upon decryption to distinguish trailing nulls from padding.
         for (size_t j = 0; j < remaining; ++j) {
             block |= (uint64_t)(unsigned char)s[i + j] << (8 * (7 - j));
         }
 
-        Node* n = new Node{block, nullptr};
-
-        if (!head) {
-            head = n;
-        } else {
-            tail->nx = n;
-        }
-
-        tail = n;
+        vec.push_back(block);
     }
 
-    return head;
+    return vec;
 }
 
-std::string node_to_str(Node* head) {
+std::string vec_to_str(const std::vector<uint64_t>& v) {
     std::string result;
 
-    for (Node* cur = head; cur != nullptr; cur = cur->nx) {
+    for (uint64_t val : v) {
         for (int j = 7; j >= 0; --j) {
-            // IMPROVEMENT: Extracts full 8 bytes unconditionally; padding null bytes will be appended to the string.
-            char c = (char)((cur->ctx >> (8 * j)) & 0xFF);
+            char c = (char)((val >> (8 * j)) & 0xFF);
             result += c;
         }
     }
@@ -111,20 +87,30 @@ std::string node_to_str(Node* head) {
 int main(){
     //main aim is to get any length input and implement a DES that divides the message into blocks of size 64 bits each and operates on them for which i could possibly implement a data structure which is kinda like a linked list
     Key k = gen();
-    // STYLE: Mixing C printf with C++ streams. Prefer std::cout.
-    printf("%" PRIu64 "\n", k.key);
+    std::cout << k.key << "\n";
+
     std::string s;
-    std::cin >> s;
-    Node* m1 = str_to_node(s);
-    Info* m = new Info{m1, false};
+    std::getline(std::cin, s);
+    
+    std::vector<uint64_t> ctx = str_to_vec(s);
+    Info* m = new Info{ctx, false};
     Info* c = enc(m, k);
-    std::string c1 = node_to_str(c->head);
-    std::cout << c1;
+    
+    for(int i = 0; i < (int)c->ctx.size(); i++){
+        std::string ctxt = vec_to_str({c->ctx[i]});
+        std::cout << ctxt << " ";
+    }
+
+    std::cout << "\n";
 
     Info* m2 = dec(c, k);
-    std::string m3 = node_to_str(m2->head);
-    std::cout << "\n"<< m3;
-    // MEMORY LEAK: 'm', 'c', and all allocated nodes are never freed before program exit.
-    //pretty printer + ways to make my msg and cipher from str to node and node to str;
+    std::string m3 = vec_to_str(m2->ctx);
+    
+    std::cout << m3 << "\n";
+
+    delete m;
+    delete c;
+    delete m2;
+    
     return 0;
 }
