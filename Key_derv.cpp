@@ -4,7 +4,7 @@
 void shift(uint32_t& k, int r_no){
     for(int i = 0; i < DES::SHIFTS[r_no]; i++){
         uint32_t x = k & 0x08000000;
-        k = ((k << 1) | (x >> 27)) & 0x0FFFFFFF; // Because 'k' is never masked with 0x0FFFFFFF, bit 28 remains set and corrupts subsequent shifts!
+        k = ((k << 1) | (x >> 27)) & 0x0FFFFFFF;
     }
 }
 
@@ -13,8 +13,6 @@ std::pair<uint32_t, uint32_t> permone(Key k){ //produces c and d for the first r
     uint32_t p1 = 0u;
     for(int i = 0; i < 56; i++){
         int s_bit = DES::PC1[i];
-        // NOTE: PC-1 requires a 64-bit key input. If 'k' only has 56 bits in bits 0..55,
-        // bits 56..63 are zero, causing bits mapped from positions 1..8 to be 0!
         unsigned int b = (k.key >> (64 - s_bit)) & 1ULL;
         p1 = (p1 << 1) | b;
         if(i == 27){

@@ -9,45 +9,50 @@
 !_TAG_PROGRAM_NAME	Universal Ctags	/Derived from Exuberant Ctags/
 !_TAG_PROGRAM_URL	https://ctags.io/	/official site/
 !_TAG_PROGRAM_VERSION	5.9.0	//
+Build and Run	Readme.md	/^## Build and Run$/;"	s	chapter:DES (Data Encryption Standard)
+Compilation	Readme.md	/^### Compilation$/;"	S	section:DES (Data Encryption Standard)""Build and Run
 DES	des_table.hpp	/^namespace DES {$/;"	n
+DES (Data Encryption Standard)	Readme.md	/^# DES (Data Encryption Standard)$/;"	c
 DES_TABLES_HPP	des_table.hpp	/^#define DES_TABLES_HPP$/;"	d
 E	des_table.hpp	/^const uint8_t E[48] = {$/;"	v	namespace:DES	typeref:typename:const uint8_t[48]
 FP	des_table.hpp	/^const uint8_t FP[64] = {$/;"	v	namespace:DES	typeref:typename:const uint8_t[64]
+File Structure	Readme.md	/^## File Structure$/;"	s	chapter:DES (Data Encryption Standard)
 IP	des_table.hpp	/^const uint8_t IP[64] = {$/;"	v	namespace:DES	typeref:typename:const uint8_t[64]
+Implementation Notes	Readme.md	/^## Implementation Notes$/;"	s	chapter:DES (Data Encryption Standard)
 Info	main.hpp	/^} Info;$/;"	t	typeref:struct:__anon3b5b27200208
 Key	main.hpp	/^} Key;$/;"	t	typeref:struct:__anon3b5b27200108
-ListNode	main.hpp	/^typedef struct ListNode{$/;"	s
 MAIN_HPP	main.hpp	/^#define MAIN_HPP$/;"	d
-Node	main.hpp	/^} Node;$/;"	t	typeref:struct:ListNode
+Overview	Readme.md	/^## Overview$/;"	s	chapter:DES (Data Encryption Standard)
 P	des_table.hpp	/^const uint8_t P[32] = {$/;"	v	namespace:DES	typeref:typename:const uint8_t[32]
 PC1	des_table.hpp	/^const uint8_t PC1[56] = {$/;"	v	namespace:DES	typeref:typename:const uint8_t[56]
 PC2	des_table.hpp	/^const uint8_t PC2[48] = {$/;"	v	namespace:DES	typeref:typename:const uint8_t[48]
+Pipeline	Readme.md	/^### Pipeline$/;"	S	section:DES (Data Encryption Standard)""Overview
+Prerequisites	Readme.md	/^### Prerequisites$/;"	S	section:DES (Data Encryption Standard)""Build and Run
 ROUNDS	main.hpp	/^#define ROUNDS /;"	d
 SBOX	des_table.hpp	/^const uint8_t SBOX[8][4][16] = {$/;"	v	namespace:DES	typeref:typename:const uint8_t[8][4][16]
 SHIFTS	des_table.hpp	/^const uint8_t SHIFTS[16] = {$/;"	v	namespace:DES	typeref:typename:const uint8_t[16]
+Usage	Readme.md	/^### Usage$/;"	S	section:DES (Data Encryption Standard)""Build and Run
 __anon3b5b27200108	main.hpp	/^typedef struct{$/;"	s
 __anon3b5b27200208	main.hpp	/^typedef struct{$/;"	s
-ctx	main.hpp	/^    uint64_t ctx;$/;"	m	struct:ListNode	typeref:typename:uint64_t
-dec	main.cpp	/^Info* dec(Info*& c, Key& k, int R){$/;"	f	typeref:typename:Info *
-enc	main.cpp	/^Info* enc(Info*& m, Key& k, int R){$/;"	f	typeref:typename:Info *
+ctx	main.hpp	/^    std::vector<uint64_t> ctx;$/;"	m	struct:__anon3b5b27200208	typeref:typename:std::vector<uint64_t>
+dec	main.cpp	/^Info* dec(const Info* c, Key& k, int R){$/;"	f	typeref:typename:Info *
+enc	main.cpp	/^Info* enc(const Info* m, Key& k, int R){$/;"	f	typeref:typename:Info *
 expPerm	blockfn.cpp	/^uint64_t expPerm(uint32_t ctx){$/;"	f	typeref:typename:uint64_t
 feistel_f	blockfn.cpp	/^uint32_t feistel_f(uint32_t ctx, Key& k){$/;"	f	typeref:typename:uint32_t
 gen	main.cpp	/^Key gen(){$/;"	f	typeref:typename:Key
 generate_secure_bytes	main.cpp	/^bool generate_secure_bytes(unsigned char* buffer, size_t buffer_size) {$/;"	f	typeref:typename:bool
-head	main.hpp	/^    ListNode* head;$/;"	m	struct:__anon3b5b27200208	typeref:typename:ListNode *
 key	main.hpp	/^    uint64_t key;$/;"	m	struct:__anon3b5b27200108	typeref:typename:uint64_t
 main	main.cpp	/^int main(){$/;"	f	typeref:typename:int
-nLeft	feistel.cpp	/^uint32_t nLeft(Node*& n){$/;"	f	typeref:typename:uint32_t
-node_to_str	main.cpp	/^std::string node_to_str(Node* head) {$/;"	f	typeref:typename:std::string
-nx	main.hpp	/^    ListNode* nx;$/;"	m	struct:ListNode	typeref:typename:ListNode *
 pad	main.hpp	/^    bool pad;$/;"	m	struct:__anon3b5b27200208	typeref:typename:bool
 permone	Key_derv.cpp	/^std::pair<uint32_t, uint32_t> permone(Key k){ \/\/produces c and d for the first round.$/;"	f	typeref:typename:std::pair<uint32_t,uint32_t>
 permtwo	Key_derv.cpp	/^Key permtwo(std::pair<uint32_t, uint32_t>& a){$/;"	f	typeref:typename:Key
-rnDec	feistel.cpp	/^Info* rnDec(Node* n, Key& k){$/;"	f	typeref:typename:Info *
-rnEnc	feistel.cpp	/^Info* rnEnc(Node* n, Key& k){ \\$/;"	f	typeref:typename:Info *
+rnDec	feistel.cpp	/^void rnDec(const std::vector<uint64_t>& v, Info* m, Key& k, int r_no){$/;"	f	typeref:typename:void
+rnEnc	feistel.cpp	/^void rnEnc(const std::vector<uint64_t>& v, Info* c, Key& k, int r_no){$/;"	f	typeref:typename:void
 round_keys	Key_derv.cpp	/^std::vector<Key> round_keys(Key k, int rs){$/;"	f	typeref:typename:std::vector<Key>
 shift	Key_derv.cpp	/^void shift(uint32_t& k, int r_no){$/;"	f	typeref:typename:void
 size	main.hpp	/^    int size;$/;"	m	struct:__anon3b5b27200108	typeref:typename:int
-str_to_node	main.cpp	/^Node* str_to_node(const std::string& s) {$/;"	f	typeref:typename:Node *
+snap	feistel.cpp	/^uint32_t snap(uint64_t n, int offset){$/;"	f	typeref:typename:uint32_t
+str_to_vec	main.cpp	/^std::vector<uint64_t> str_to_vec(const std::string& s) {$/;"	f	typeref:typename:std::vector<uint64_t>
 sub	blockfn.cpp	/^uint32_t sub(uint64_t D){$/;"	f	typeref:typename:uint32_t
+vec_to_str	main.cpp	/^std::string vec_to_str(const std::vector<uint64_t>& v) {$/;"	f	typeref:typename:std::string
 xor_round_key	blockfn.cpp	/^uint64_t xor_round_key(uint64_t b, Key k){$/;"	f	typeref:typename:uint64_t

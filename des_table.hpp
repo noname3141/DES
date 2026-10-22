@@ -3,11 +3,9 @@
 
 #include <cstdint>
 
-// STYLE: 'const uint8_t' arrays in a header have internal linkage in C++, creating duplicate copies in every translation unit. Prefer 'inline constexpr uint8_t' (C++17).
 namespace DES {
 
 // 1. Initial Permutation (IP) [64 bits -> 64 bits]
-// ERROR: IP is defined here, but never called or applied in encryption or decryption!
 const uint8_t IP[64] = {
     58, 50, 42, 34, 26, 18, 10,  2,
     60, 52, 44, 36, 28, 20, 12,  4,
@@ -44,7 +42,6 @@ const uint8_t P[32] = {
 };
 
 // 4. Final Permutation (FP / IP^-1) [64 bits -> 64 bits]
-// ERROR: FP is defined here, but never called or applied in encryption or decryption!
 const uint8_t FP[64] = {
     40,  8, 48, 16, 56, 24, 64, 32,
     39,  7, 47, 15, 55, 23, 63, 31,
