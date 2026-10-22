@@ -124,6 +124,8 @@ int main(){
     Info* m2 = dec(c, k);
     std::string m3 = node_to_str(m2->head);
     std::cout << "\n"<< m3;
+    delete m;
+    delete c;
     // MEMORY LEAK: 'm', 'c', and all allocated nodes are never freed before program exit.
     //pretty printer + ways to make my msg and cipher from str to node and node to str;
     return 0;
