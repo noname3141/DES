@@ -19,9 +19,9 @@ Key gen(bool f){
     k.key = 0u; 
     if (generate_secure_bytes(des_key, sizeof(des_key))) {
 		if(f){	
-			std::cout << "-----------------------------------------------------\n";
+			std::cout << "-------------------------------------------------------\n";
         	std::cout << "Secure DES Key generated successfully via /dev/urandom:\n";
-			std::cout << "-----------------------------------------------------\n";
+			std::cout << "-------------------------------------------------------\n";
         	std::cout << "Generated Key (hex) : ";
 		}
 		for (int i = 0; i < 8; i++) {
@@ -107,16 +107,16 @@ int main(int argc, char* argv[]){
     Key k = gen(f);
 
     std::string s;
-    std::cout << "\n";
+    if(f)std::cout << "\n";
 	std::cout << "Enter Plaintext: ";
     std::getline(std::cin, s);
+    std::cout << "\n";
 
     std::vector<uint64_t> ctx = str_to_vec(s);
     if(f){
-    	std::cout << "\n";
-		std::cout << "-----------------------------------------------------\n";
-    	std::cout << "Successfully encrypted " << ctx.size()*8 << " bytes of data (with padding)\n";
-		std::cout << "-----------------------------------------------------\n";
+		std::cout << "---------------------------------------\n";
+    	std::cout << "Successfully encrypted " << s.size() << " bytes of data \n";
+		std::cout << "---------------------------------------\n";
     	std::cout << "\n";
 	}
 	Info* m = new Info{ctx, false};
@@ -128,20 +128,14 @@ int main(int argc, char* argv[]){
 		std::cout << hex_str << " ";
     }
     std::cout << "\n";
+    std::cout << "\n";
 
     Info* m2 = dec(c, k);
     std::string m3 = vec_to_str(m2->ctx);
-    if(f){
-    	std::cout << "\n";
-		std::cout << "-----------------------------------------------------\n";
-    	std::cout << "Successfully decrypted " << ctx.size()*8 << " bytes of data (with padding)\n";
-		std::cout << "-----------------------------------------------------\n";
-    	std::cout << "\n";
-	}
     std::cout << "Original Plaintext : " << s << "\n";
     std::cout << "Retrieved Plaintext: " << m3 << "\n";
-    std::cout << "\n";
-	if(strcmp(s.c_str(), m3.c_str()) == 0){
+	if(f && strcmp(s.c_str(), m3.c_str()) == 0){
+    	std::cout << "\n";
 		std::cout << "------------------------------\n";
 		std::cout << "| Encryption Scheme Verified |\n";
 		std::cout << "------------------------------\n";
