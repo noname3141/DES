@@ -33,33 +33,21 @@ Key gen(){
 
 Info* enc(Info*& m, Key& k, int R){
     if(!m || R <= 0)return nullptr;
-    Info* c = new Info{nullptr, false};
-    Node* n = new Node{0, nullptr};
-    c->head = n;
+    std::vector<uint64_t> v;
+    Info* c = new Info{v, false};
     std::vector<Key> k1 = round_keys(k, R);
     for(int i = 0; i < R; i++){
-        if(i == 0){
-            rnEnc(m->head, c, k1[i], i + 1);
-        }
-        else{
-            rnEnc(c->head, c, k1[i], i + 1);
-        }
+        rnEnc(m->ctx, c, k1[i], i + 1);
     }
     return c;
 }
 
 Info* dec(Info*& c, Key& k, int R){
-    Info* m = new Info{nullptr, false};
-    Node* n = new Node{0, nullptr};
-    m->head = n;
+    std::vector<uint64_t> v;
+    Info* m = new Info{v, false};
     std::vector<Key> k1 = round_keys(k, R);
     for(int i = R - 1; i >= 0; i--){
-        if(i == R - 1){
-            rnDec(c->head, m, k1[i], 1);
-        }
-        else{
-            rnDec(m->head, m, k1[i], 2);
-        }
+        rnDec(c->ctx, m, k1[i], R - i);
     }
     return m;
 }
@@ -111,20 +99,21 @@ std::string node_to_str(Node* head) {
 int main(){
     //main aim is to get any length input and implement a DES that divides the message into blocks of size 64 bits each and operates on them for which i could possibly implement a data structure which is kinda like a linked list
     Key k = gen();
-    // STYLE: Mixing C printf with C++ streams. Prefer std::cout.
-    printf("%" PRIu64 "\n", k.key);
+    std::cout << k.key << "\n";
+
     std::string s;
-    std::cin >> s;
-    Node* m1 = str_to_node(s);
+    std::getline(std::cin, s);
+    
+    std::vector<uint64_t> m1 = str_to_vec(s);
     Info* m = new Info{m1, false};
     Info* c = enc(m, k);
-    std::string c1 = node_to_str(c->head);
+    
+    std::string c1 = vec_to_str(c->ctx);
     std::cout << c1;
 
     Info* m2 = dec(c, k);
-    std::string m3 = node_to_str(m2->head);
-    std::cout << "\n"<< m3;
-    // MEMORY LEAK: 'm', 'c', and all allocated nodes are never freed before program exit.
-    //pretty printer + ways to make my msg and cipher from str to node and node to str;
+    std::string m3 = vec_to_str(m2->ctx);
+    
+    std::cout << "\n"<< m3 << "\n";
     return 0;
 }
