@@ -31,7 +31,7 @@ Key gen(){
     return k;
 }
 
-Info* enc(Info*& m, Key& k, int R){
+Info* enc(const Info* m, Key& k, int R){
     if(!m || R <= 0)return nullptr;
     std::vector<uint64_t> v;
     Info* c = new Info{v, false};
@@ -42,7 +42,8 @@ Info* enc(Info*& m, Key& k, int R){
     return c;
 }
 
-Info* dec(Info*& c, Key& k, int R){
+Info* dec(const Info* c, Key& k, int R){
+    if(!c || R <= 0)return nullptr;
     std::vector<uint64_t> v;
     Info* m = new Info{v, false};
     std::vector<Key> k1 = round_keys(k, R);
@@ -52,43 +53,30 @@ Info* dec(Info*& c, Key& k, int R){
     return m;
 }
 
-Node* str_to_node(const std::string& s) {
-    Node* head = nullptr;
-    Node* tail = nullptr;
+std::vector<uint64_t> str_to_vec(const std::string& s) {
+    std::vector<uint64_t> vec;
+    if (s.empty()) return vec;
 
-    if(s.size() == 0) return nullptr;
     for (size_t i = 0; i < s.size(); i += 8) {
         uint64_t block = 0;
-
         size_t remaining = std::min<size_t>(8, s.size() - i);
 
-        // IMPROVEMENT: No standard padding (e.g. PKCS#7). Trailing bytes are simply 0,
-        // making it impossible upon decryption to distinguish trailing nulls from padding.
         for (size_t j = 0; j < remaining; ++j) {
             block |= (uint64_t)(unsigned char)s[i + j] << (8 * (7 - j));
         }
 
-        Node* n = new Node{block, nullptr};
-
-        if (!head) {
-            head = n;
-        } else {
-            tail->nx = n;
-        }
-
-        tail = n;
+        vec.push_back(block);
     }
 
-    return head;
+    return vec;
 }
 
-std::string node_to_str(Node* head) {
+std::string vec_to_str(const std::vector<uint64_t>& v) {
     std::string result;
 
-    for (Node* cur = head; cur != nullptr; cur = cur->nx) {
+    for (uint64_t val : v) {
         for (int j = 7; j >= 0; --j) {
-            // IMPROVEMENT: Extracts full 8 bytes unconditionally; padding null bytes will be appended to the string.
-            char c = (char)((cur->ctx >> (8 * j)) & 0xFF);
+            char c = (char)((val >> (8 * j)) & 0xFF);
             result += c;
         }
     }
@@ -104,16 +92,25 @@ int main(){
     std::string s;
     std::getline(std::cin, s);
     
-    std::vector<uint64_t> m1 = str_to_vec(s);
-    Info* m = new Info{m1, false};
+    std::vector<uint64_t> ctx = str_to_vec(s);
+    Info* m = new Info{ctx, false};
     Info* c = enc(m, k);
     
-    std::string c1 = vec_to_str(c->ctx);
-    std::cout << c1;
+    for(int i = 0; i < (int)c->ctx.size(); i++){
+        std::string ctxt = vec_to_str({c->ctx[i]});
+        std::cout << ctxt << " ";
+    }
+
+    std::cout << "\n";
 
     Info* m2 = dec(c, k);
     std::string m3 = vec_to_str(m2->ctx);
     
-    std::cout << "\n"<< m3 << "\n";
+    std::cout << m3 << "\n";
+
+    delete m;
+    delete c;
+    delete m2;
+    
     return 0;
 }
