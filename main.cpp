@@ -38,12 +38,7 @@ Info* enc(Info*& m, Key& k, int R){
     c->head = n;
     std::vector<Key> k1 = round_keys(k, R);
     for(int i = 0; i < R; i++){
-        if(i == 0){
-            rnEnc(m->head, c, k1[i], i + 1);
-        }
-        else{
-            rnEnc(c->head, c, k1[i], i + 1);
-        }
+        rnEnc(m->head, c, k1[i], i + 1);
     }
     return c;
 }
@@ -54,12 +49,7 @@ Info* dec(Info*& c, Key& k, int R){
     m->head = n;
     std::vector<Key> k1 = round_keys(k, R);
     for(int i = R - 1; i >= 0; i--){
-        if(i == R - 1){
-            rnDec(c->head, m, k1[i], 1);
-        }
-        else{
-            rnDec(m->head, m, k1[i], 2);
-        }
+        rnDec(c->head, m, k1[i], R - i);
     }
     return m;
 }
