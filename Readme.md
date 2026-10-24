@@ -70,7 +70,7 @@ HelloWorld
 
 ## Implementation Notes
 
-- **Block Storage**: Blocks are stored and operated on as `std::vector<uint64_t>`.
+- **Block Storage**: The current implementation is done in ECB mode. Blocks are stored and operated on as `std::vector<uint64_t>`.
 - **Padding**: Strings are zero-padded to the nearest 8-byte boundary. PKCS#7 padding is not currently implemented.
 - **Initial and Final Permutations**: The `IP` and `FP` ($IP^{-1}$) tables are defined in `des_table.hpp`, but data-level permutations are currently bypassed in the block pipeline.
 - **Security Notice**: DES has an effective key length of 56 bits and is insecure for production use. This implementation is strictly for educational purposes.
