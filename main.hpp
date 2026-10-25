@@ -25,8 +25,8 @@ typedef struct{
 } Info;
 
 //feistel
-void rnEnc(const std::vector<uint64_t>& v, Info* c, Key& k, int r_no);
-void rnDec(const std::vector<uint64_t>& v, Info* m, Key& k, int r_no);
+void rnEnc(uint64_t pln_txt, std::vector<uint64_t>& cip_vec,const std::vector<Key>& keys, int idx);
+void rnDec(uint64_t cip_txt, std::vector<uint64_t>& msg_vec,const std::vector<Key>& keys, int idx);
 uint32_t snap(const uint64_t n, int offset);
 
 //blockfn
@@ -48,7 +48,7 @@ Key gen(bool k);
 std::vector<uint64_t> str_to_vec(const std::string& s);
 std::string vec_to_str(const std::vector<uint64_t>& v);
 std::string uint64ToHex(const std::vector<unsigned char>& v);
-Info* enc(const Info* m, Key& k, int R = ROUNDS);
-Info* dec(const Info* c, Key& k, int R = ROUNDS);
+Info* enc(const Info* m, Key& k, uint64_t IV, int R = ROUNDS);
+Info* dec(const Info* c, Key& k, uint64_t IV, int R = ROUNDS);
 
 #endif

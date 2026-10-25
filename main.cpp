@@ -36,24 +36,32 @@ Key gen(bool f){
     return k;
 }
 
-Info* enc(const Info* m, Key& k, int R){
+Info* enc(const Info* m, Key& k, uint64_t IV, int R){
     if(!m || R <= 0)return nullptr;
     std::vector<uint64_t> v;
     Info* c = new Info{v, false};
-    std::vector<Key> k1 = round_keys(k, R);
-    for(int i = 0; i < R; i++){
-        rnEnc(m->ctx, c, k1[i], i + 1);
+    const std::vector<Key> k1 = round_keys(k, R);
+    int sz = m->ctx.size();
+    c->ctx.resize(sz);
+    for(int i = 0; i < sz; i++){
+        uint64_t prev_cip = (i == 0) ? IV : c->ctx[i - 1];
+        uint64_t curr_pln = m->ctx[i] ^ prev_cip;
+        rnEnc(curr_pln, c->ctx, k1, i);
     }
     return c;
 }
 
-Info* dec(const Info* c, Key& k, int R){
+Info* dec(const Info* c, Key& k, uint64_t IV, int R){
     if(!c || R <= 0)return nullptr;
     std::vector<uint64_t> v;
     Info* m = new Info{v, false};
-    std::vector<Key> k1 = round_keys(k, R);
-    for(int i = R - 1; i >= 0; i--){
-        rnDec(c->ctx, m, k1[i], R - i);
+    const std::vector<Key> k1 = round_keys(k, R);
+    int sz = c->ctx.size();
+    m->ctx.resize(sz);
+    for(int i = 0; i < sz; i++){
+        uint64_t prev_cip = (i == 0) ? IV : c->ctx[i - 1];
+        rnDec(c->ctx[i], m->ctx, k1, i);
+        m->ctx[i] = m->ctx[i] ^ prev_cip;
     }
     return m;
 }
@@ -120,7 +128,8 @@ int main(int argc, char* argv[]){
     	std::cout << "\n";
 	}
 	Info* m = new Info{ctx, false};
-    Info* c = enc(m, k);
+    Key IV = gen(true);
+    Info* c = enc(m, k, IV.key);
     
 	std::cout << "Generated Cipertext Blocks: ";
     for(int i = 0; i < (int)c->ctx.size(); i++){
@@ -130,7 +139,7 @@ int main(int argc, char* argv[]){
     std::cout << "\n";
     std::cout << "\n";
 
-    Info* m2 = dec(c, k);
+    Info* m2 = dec(c, k, IV.key);
     std::string m3 = vec_to_str(m2->ctx);
     std::cout << "Original Plaintext : " << s << "\n";
     std::cout << "Retrieved Plaintext: " << m3 << "\n";
