@@ -1,11 +1,13 @@
 #ifndef MAIN_HPP
 #define MAIN_HPP
 #include <iostream>
+#include <sstream>
 #include <fstream>
 #include <vector>
 #include <cstdlib>
 #include <cinttypes>
 #include <cstdint>
+#include <cstring>
 #include <random>
 #include <unistd.h>
 #include <iomanip>
@@ -23,8 +25,8 @@ typedef struct{
 } Info;
 
 //feistel
-void rnEnc(const std::vector<uint64_t>& v, Info* c, Key& k, int r_no);
-void rnDec(const std::vector<uint64_t>& v, Info* m, Key& k, int r_no);
+void rnEnc(uint64_t pln_txt, std::vector<uint64_t>& cip_vec,const std::vector<Key>& keys, int idx);
+void rnDec(uint64_t cip_txt, std::vector<uint64_t>& msg_vec,const std::vector<Key>& keys, int idx);
 uint32_t snap(const uint64_t n, int offset);
 
 //blockfn
@@ -42,10 +44,11 @@ std::vector<Key> round_keys(Key k, int r_no);
 //main
 #define ROUNDS 16
 bool generate_secure_bytes(unsigned char* buffer, size_t buffer_size);
-Key gen();
+Key gen(bool k);
 std::vector<uint64_t> str_to_vec(const std::string& s);
 std::string vec_to_str(const std::vector<uint64_t>& v);
-Info* enc(const Info* m, Key& k, int R = ROUNDS);
-Info* dec(const Info* c, Key& k, int R = ROUNDS);
+std::string uint64ToHex(const std::vector<unsigned char>& v);
+Info* enc(const Info* m, Key& k, uint64_t IV, int R = ROUNDS);
+Info* dec(const Info* c, Key& k, uint64_t IV, int R = ROUNDS);
 
 #endif
